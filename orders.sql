@@ -9,7 +9,7 @@ FROM Table_order;
 -- Top 5% of clients
 WITH b1 AS (SELECT
 customer_id, SUM(total_price) AS sum_order,
-FROM`ua-trends-434818.orders.Table_order`
+FROM Table_order
 GROUP BY 1 ), b2 AS( SELECT *,
                  PERCENT_RANK() OVER(ORDER BY sum_order) as percent_ranks
                  FROM b1)
@@ -20,7 +20,7 @@ WHERE percent_ranks>=0.95;
 -- Number of orders from users
 WITH b1 AS (SELECT *,
 ROW_NUMBER() OVER(PARTITION BY customer_id order by order_date) AS rn
-FROM`ua-trends-434818.orders.Table_order`)
+FROM Table_order)
 
 SELECT rn, COUNT(1) FROM b1
 GROUP by 1; 
@@ -29,7 +29,7 @@ GROUP by 1;
 WITH b1 AS (SELECT *,
 ROW_NUMBER() OVER(PARTITION BY customer_id ORDER BY order_date) AS rn,
 FIRST_VALUE(total_price) OVER(PARTITION BY customer_id ORDER BY order_date) AS fv
-FROM`ua-trends-434818.orders.Table_order`)
+FROM )
 
 SELECT
 AVG(fv-total_price) AS avg_diff,
@@ -41,7 +41,7 @@ WHERE rn>=1;
 --report (https://lookerstudio.google.com/s/muwsht1zYTw)
 WITH b1 AS (SELECT *,
 MOD(ABS(order_id), 1000) AS box_id 
-FROM `ua-trends-434818.orders.Table_order` )
+FROM  )
 , b2 AS 
 (SELECT box_id,
 DATE_TRUNC(order_date, WEEK) AS date_week, 
@@ -72,7 +72,17 @@ SELECT date_week, status, COUNT(1) as buyers
 FROM b3
 GROUP BY 1, 2;
 
+--Average amount for the current day and the previous six
+WITH b1 as (
+SELECT order_date,
+ ROUND(SUM(total_price)) AS sum_total
+ FROM 
+ GROUP BY 1)
 
+ SELECT *,
+  AVG(sum_total) OVER(ORDER BY order_date ROWS BETWEEN 6 preceding and current row) AS moving_avg
+ FROM b1
+ ORDER bY order_date;
 
 
 
